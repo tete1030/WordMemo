@@ -2,6 +2,7 @@ package me.texot.rword;
 
 import android.app.Application;
 import android.content.DialogInterface;
+import android.os.CountDownTimer;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -12,6 +13,8 @@ import android.widget.TextView;
 
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -23,7 +26,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Button btn_curno;
     Button btn_curyes;
 
-    WordProvider wordProvider;
+    IWordProvider wordProvider;
 
     public MainActivity()
     {
@@ -46,13 +49,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btn_curno.setOnClickListener(MainActivity.this);
         btn_curyes.setOnClickListener(MainActivity.this);
 
-        wordProvider = new WordProvider(getApplicationContext());
+        wordProvider = new AwkwardProvider(getApplicationContext());
         wordProvider.prepareWordList(7);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        Timer timer = new Timer(false);
-        timer.scheduleAtFixedRate(new TimerTask() {
+        Timer timer = new Timer(true);
+        timer.schedule(new TimerTask() {
             @Override
             public void run() {
                 MainActivity.this.runOnUiThread(new Runnable() {
@@ -62,11 +65,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 });
             }
-        }, 0, 3000);
+        }, 0, 1000);
+
+
+
+//        new CountDownTimer(3000, 1000) {
+//
+//            public void onTick(long millisUntilFinished) {
+//
+//            }
+//
+//            public void onFinish() {
+//                MainActivity.this.nextWord();
+//            }
+//        }.start();
+
     }
 
     public void nextWord()
     {
+        wordProvider.setCurrentResult(1);
         WordDbAdapter.WordData word = wordProvider.getNextWord();
         if(word != null) {
             tv_word.setText(word.word);

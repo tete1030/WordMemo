@@ -151,6 +151,7 @@ public class WordDbAdapter {
         cs.moveToFirst();
         do {
             ret[counter] = new WordData();
+            ret[counter].id = cs.getInt(cs.getColumnIndex(TABLE_WORD_KEY_ID));
             ret[counter].word = cs.getString(cs.getColumnIndex(TABLE_WORD_KEY_WORD));
             ret[counter++].pronAndParaphrList = unpackContent(cs.getBlob(cs.getColumnIndex(TABLE_WORD_KEY_CONTENT)));
         } while(cs.moveToNext());
