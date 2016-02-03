@@ -107,5 +107,13 @@ public class NormalDistributionWordProvider implements IWordProvider {
         }
     }
 
+    @Override
+    public int getCurrentCompletedCount() {
+        return m_curTime - 1;
+    }
 
+    @Override
+    public int getTotalCount() {
+        return m_wordList.size();
+    }
 }

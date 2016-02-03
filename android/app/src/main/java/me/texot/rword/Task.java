@@ -13,16 +13,22 @@ public class Task {
     private static int MAX_DEPTH = 10;
     //private TaskList m_taskList;
     private boolean m_isLoop = false;
-    public Task(WordDbAdapter.WordData word, int priority, int pos, int maxOffset) {
+    private RememberInfo m_rememberInfo;
+    public Task(WordDbAdapter.WordData word, RememberInfo remeInfo, int priority, int pos, int maxOffset) {
         m_word = word;
         m_priority = priority;
         m_pos = pos;
         m_maxOffset = maxOffset;
+        m_rememberInfo = remeInfo;
         //m_taskList = taskList;
     }
 
     public int getPriority() {
         return m_priority;
+    }
+
+    public RememberInfo getRememberInfo() {
+        return m_rememberInfo;
     }
 
     public WordDbAdapter.WordData getWord() {

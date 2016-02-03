@@ -8,4 +8,6 @@ public interface IWordProvider {
     public WordDbAdapter.WordData getNextWord();
     public void setCurrentResult(int result);
     public void setLastResult(int result);
+    public int getCurrentCompletedCount();
+    public int getTotalCount();
 }

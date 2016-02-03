@@ -1,11 +1,12 @@
 package me.texot.rword;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * Created by texot on 16/1/30.
  */
-public class TaskList {
+public class TaskList implements Iterable<Task> {
     private static int TASKLIST_SIZE_INCREASE_STEP = 10;
     private static int TASKLIST_INIT_SIZE = 10;
     private ArrayList<Task> m_tasks = new ArrayList<>(TASKLIST_INIT_SIZE);
@@ -66,6 +67,10 @@ public class TaskList {
         return c;
     }
 
+    public int countOfAll() {
+        return m_tasks.size();
+    }
+
 
     public Integer[] getEmptyArray() {
         ArrayList<Integer> list = new ArrayList<>();
@@ -110,4 +115,8 @@ public class TaskList {
         return retTaskList.toArray(new Task[0]);
     }
 
+    @Override
+    public Iterator<Task> iterator() {
+        return m_tasks.iterator();
+    }
 }
