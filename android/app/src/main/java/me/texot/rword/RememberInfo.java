@@ -4,13 +4,13 @@ package me.texot.rword;
  * Created by texot on 15/12/26.
  */
 public class RememberInfo {
-    private WordDbAdapter.WordData m_word;
+    private WordData m_word;
     private int m_level;
     private int m_correctTimes;
     private int m_wrongTimes;
     private int m_lastRemTime;
 
-    public RememberInfo(WordDbAdapter.WordData word) {
+    public RememberInfo(WordData word) {
         m_word = word;
         m_level = 0;
         m_correctTimes = 0;
@@ -22,7 +22,7 @@ public class RememberInfo {
         return m_lastRemTime;
     }
 
-    public WordDbAdapter.WordData getWord() {
+    public WordData getWord() {
         return m_word;
     }
 

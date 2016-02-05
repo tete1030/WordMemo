@@ -6,7 +6,7 @@ import java.util.LinkedList;
  * Created by texot on 16/1/30.
  */
 public class Task {
-    private WordDbAdapter.WordData m_word;
+    private WordData m_word;
     private int m_priority;
     private int m_pos;
     private int m_maxOffset;
@@ -14,7 +14,7 @@ public class Task {
     //private TaskList m_taskList;
     private boolean m_isLoop = false;
     private RememberInfo m_rememberInfo;
-    public Task(WordDbAdapter.WordData word, RememberInfo remeInfo, int priority, int pos, int maxOffset) {
+    public Task(WordData word, RememberInfo remeInfo, int priority, int pos, int maxOffset) {
         m_word = word;
         m_priority = priority;
         m_pos = pos;
@@ -31,7 +31,7 @@ public class Task {
         return m_rememberInfo;
     }
 
-    public WordDbAdapter.WordData getWord() {
+    public WordData getWord() {
         return m_word;
     }
 

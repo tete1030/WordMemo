@@ -22,20 +22,20 @@ public class AwkwardProvider implements IWordProvider {
     };
 
     private WordDbAdapter m_dbAdapter;
-    private ArrayList<WordDbAdapter.WordData> m_wordList = new ArrayList<>();
+    private ArrayList<WordData> m_wordList = new ArrayList<>();
     private TaskList m_taskList = new TaskList();
     private int m_taskIndex = -1;
     private int m_lastTaskIndex = -1;
     private LinkedList<RememberInfo> m_remeHistory = new LinkedList<>();
 
-    public AwkwardProvider(Context context) {
-        m_dbAdapter = new WordDbAdapter(context);
+    public AwkwardProvider() {
+        m_dbAdapter = WordDbAdapter.getInstance(null);
         m_dbAdapter.open();
     }
 
     @Override
     public void prepareWordList(int listId) {
-        WordDbAdapter.WordData[] list = m_dbAdapter.getWordListWithContent(listId);
+        WordData[] list = m_dbAdapter.getWordListWithContent(listId);
 
         if (list == null) {
             Log.e(TAG, "prepareWordList: list null");
@@ -44,7 +44,7 @@ public class AwkwardProvider implements IWordProvider {
         else if(list.length <= 0)
             Log.e(TAG, "prepareWordList: list empty");
 
-        for (WordDbAdapter.WordData word : list) {
+        for (WordData word : list) {
             m_wordList.add(word);
             int emptyPos = 0;
             TaskList tmp;
@@ -76,7 +76,7 @@ public class AwkwardProvider implements IWordProvider {
     public String getStatistics() {
         StringBuilder sb = new StringBuilder();
         Task[] tasks = m_taskList.toArrayOfAll();
-        for(WordDbAdapter.WordData word : m_wordList) {
+        for(WordData word : m_wordList) {
             sb.append(word.word).append(": ");
             ArrayList<Integer> indexList = new ArrayList<>();
             for(int i=0; i<tasks.length; i++)
@@ -96,7 +96,7 @@ public class AwkwardProvider implements IWordProvider {
     }
 
     @Override
-    public WordDbAdapter.WordData getNextWord() {
+    public WordData getNextWord() {
         //int taskIndex = m_taskList.findNextAvail(m_taskIndex + 1);
         int taskIndex = m_taskIndex + 1;
         if(taskIndex >= 0 && taskIndex < m_taskList.countOfAll()) {

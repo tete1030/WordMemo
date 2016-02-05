@@ -38,6 +38,8 @@ public class WordDbAdapter {
     private static final String TABLE_LOG_KEY_TIME = "time";
     private static final String TABLE_LOG_KEY_RESULT = "result";
 
+    private static WordDbAdapter sInstance = null;
+
     private final Context mCtx;
     private DatabaseHelper mDbHelper;
     private SQLiteDatabase mDb;
@@ -46,27 +48,30 @@ public class WordDbAdapter {
         DatabaseHelper(Context context) {
             super(context, DATABASE_NAME, context.getExternalFilesDir(null).getAbsolutePath(), null, DATABASE_VERSION);
         }
+
     }
 
-    public class WordData {
-        public int id;
-        public String word;
-        public ArrayList<Pair<String, String>> pronAndParaphrList;
-    }
-
-
-    public WordDbAdapter(Context ctx) {
+    private WordDbAdapter(Context ctx) {
         this.mCtx = ctx;
     }
 
-    public WordDbAdapter open() {
-        if(mDb != null || mDbHelper != null) {
-            if (mDb != null) Log.e(TAG, "open: mDb not null");
-            if (mDbHelper != null) Log.e(TAG, "open: mDbHelper not null");
-            close();
+    public static synchronized WordDbAdapter getInstance(Context ctx) throws NullPointerException {
+        if(sInstance == null && ctx == null)
+            throw new NullPointerException();
+        if(sInstance == null) {
+            sInstance = new WordDbAdapter(ctx);
         }
-        mDbHelper = new DatabaseHelper(mCtx);
-        mDb = mDbHelper.getWritableDatabase();
+        return sInstance;
+    }
+
+    public WordDbAdapter open() {
+        if(mDbHelper == null && mDb == null) {
+            mDbHelper = new DatabaseHelper(mCtx);
+            mDb = mDbHelper.getWritableDatabase();
+        }
+        if(mDbHelper == null || mDb == null) {
+            Log.e(TAG, (mDbHelper == null? "mDbHelper is null, " : "") + (mDb == null? "mDb is null" : ""), new NullPointerException());
+        }
         return this;
     }
 
@@ -154,6 +159,25 @@ public class WordDbAdapter {
             ret[counter].id = cs.getInt(cs.getColumnIndex(TABLE_WORD_KEY_ID));
             ret[counter].word = cs.getString(cs.getColumnIndex(TABLE_WORD_KEY_WORD));
             ret[counter++].pronAndParaphrList = unpackContent(cs.getBlob(cs.getColumnIndex(TABLE_WORD_KEY_CONTENT)));
+        } while(cs.moveToNext());
+        cs.close();
+        return ret;
+    }
+
+    public int[] getWordListIDs() {
+        Cursor cs = mDb.query(DATABASE_TABLE_WORD, new String[]{TABLE_WORD_KEY_LIST_ID},
+                null, null, TABLE_WORD_KEY_LIST_ID, null, null, null);
+        if(cs == null) return null;
+
+        int count = cs.getCount();
+        if(count == 0) return new int[0];
+
+        int ret[] = new int[count];
+
+        int counter = 0;
+        cs.moveToFirst();
+        do {
+            ret[counter++] = cs.getInt(cs.getColumnIndex(TABLE_WORD_KEY_LIST_ID));
         } while(cs.moveToNext());
         cs.close();
         return ret;

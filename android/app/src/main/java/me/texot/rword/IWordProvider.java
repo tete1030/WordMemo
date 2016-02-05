@@ -5,7 +5,7 @@ package me.texot.rword;
  */
 public interface IWordProvider {
     public void prepareWordList(int listId);
-    public WordDbAdapter.WordData getNextWord();
+    public WordData getNextWord();
     public void setCurrentResult(int result);
     public void setLastResult(int result);
     public int getCurrentCompletedCount();

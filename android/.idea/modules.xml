@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../../Python/GRELearner/android/android.iml" filepath="$PROJECT_DIR$/../../Python/GRELearner/android/android.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/rword.iml" filepath="$PROJECT_DIR$/rword.iml" />
     </modules>
   </component>
 </project>

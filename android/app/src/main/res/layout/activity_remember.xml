@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".RememberActivity">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="sporadic"
+        android:id="@+id/txt_word"
+        android:layout_marginTop="60dp"
+        android:textSize="40sp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="[spəˈrædik]"
+        android:id="@+id/txt_pronunciation"
+        android:layout_below="@+id/txt_word"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="adj. 不定时发生的"
+        android:id="@+id/txt_paraphrase"
+        android:layout_below="@+id/txt_pronunciation" />
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/txt_paraphrase"
+        android:gravity="bottom"
+        android:paddingBottom="20dp"
+        android:paddingTop="20dp"
+        android:id="@+id/linearLayout">
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:text="LAST NO"
+            android:textSize="30sp"
+            android:id="@+id/btn_lastno"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/button" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:text="NO"
+            android:textSize="30sp"
+            android:id="@+id/btn_no"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/button" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:text="YES"
+            android:textSize="30sp"
+            android:id="@+id/btn_yes"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/button" />
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="1/1"
+        android:id="@+id/txt_progress"
+        android:layout_alignParentTop="true"
+        android:layout_alignEnd="@+id/linearLayout"/>
+</RelativeLayout>

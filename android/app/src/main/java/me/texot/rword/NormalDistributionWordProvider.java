@@ -24,9 +24,9 @@ public class NormalDistributionWordProvider implements IWordProvider {
     private int m_offset[] = {0, 1, 2, 8, 16, 32, 64};
     private NormalDistribution m_offsetDist[];
 
-    public NormalDistributionWordProvider(Context context) {
+    public NormalDistributionWordProvider() {
         m_wordList = new ArrayList<>();
-        m_dbAdapter = new WordDbAdapter(context);
+        m_dbAdapter = WordDbAdapter.getInstance(null);
         m_dbAdapter.open();
         m_offsetDist = new NormalDistribution[m_offset.length];
         m_offsetDist[0] = null;
@@ -37,7 +37,7 @@ public class NormalDistributionWordProvider implements IWordProvider {
 
     @Override
     public void prepareWordList(int listId) {
-        WordDbAdapter.WordData[] list = m_dbAdapter.getWordListWithContent(listId);
+        WordData[] list = m_dbAdapter.getWordListWithContent(listId);
 
         if (list == null) {
             Log.e(TAG, "prepareWordList: list null");
@@ -46,7 +46,7 @@ public class NormalDistributionWordProvider implements IWordProvider {
         else if(list.length <= 0)
             Log.e(TAG, "prepareWordList: list empty");
 
-        for (WordDbAdapter.WordData word : list) {
+        for (WordData word : list) {
             m_wordList.add(new RememberInfo(word));
         }
     }
@@ -56,7 +56,7 @@ public class NormalDistributionWordProvider implements IWordProvider {
     }
 
     @Override
-    public WordDbAdapter.WordData getNextWord() {
+    public WordData getNextWord() {
         int topPriorityIndex = -1;
         double topPriority = 0;
 

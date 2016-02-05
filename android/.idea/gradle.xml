@@ -9,8 +9,8 @@
         <option name="gradleJvm" value="1.8" />
         <option name="modules">
           <set>
-            <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/../../Python/GRELearner/android" />
+            <option value="$PROJECT_DIR$/../../Python/GRELearner/android/app" />
           </set>
         </option>
       </GradleProjectSettings>

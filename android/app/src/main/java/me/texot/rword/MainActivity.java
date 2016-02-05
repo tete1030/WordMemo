@@ -1,186 +1,105 @@
 package me.texot.rword;
 
-import android.app.Application;
-import android.content.DialogInterface;
-import android.os.CountDownTimer;
-import android.support.v7.app.AppCompatActivity;
+import android.app.ActivityManager;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
-import android.widget.Button;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.logging.Handler;
-import java.util.logging.LogRecord;
+import org.w3c.dom.Text;
 
+import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity {
 
-    TextView tv_word;
-    TextView tv_pronunciation;
-    TextView tv_paraphrase;
-    TextView tv_progress;
-    Button btn_lastno;
-    Button btn_curno;
-    Button btn_curyes;
+    private static class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
 
-    IWordProvider wordProvider;
+        public static class ViewHolder extends RecyclerView.ViewHolder {
+            private View m_view;
+            private TextView m_textView;
+            private Context m_ctx;
+            public ViewHolder(View v, final Context ctx) {
+                super(v);
+                m_view = v;
+                m_textView = (TextView) v.findViewById(R.id.txt_itemtext);
+                m_ctx = ctx;
+            }
+            public void setID(final int id) {
+                m_textView.setText(String.valueOf(id));
+                m_view.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        Intent intent = new Intent(m_ctx, RememberActivity.class);
+                        intent.putExtra("listid", id);
+                        m_ctx.startActivity(intent);
+                    }
+                });
+            }
+        }
 
-    CountDownTimer remeTimer, showTimer;
+        private int[] m_wordList;
+        private Context m_ctx;
 
-    public MainActivity()
-    {
-        super();
+        public MyAdapter(int[] wordList, Context ctx) {
+            m_wordList = wordList.clone();
+            m_ctx = ctx;
+        }
+
+        @Override
+        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View v = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.view_wordlist_item, parent, false);
+            ViewHolder vh = new ViewHolder(v, m_ctx);
+            return vh;
+        }
+
+        @Override
+        public void onBindViewHolder(ViewHolder holder, int position) {
+            holder.setID(m_wordList[position]);
+        }
+
+        @Override
+        public int getItemCount() {
+            return m_wordList.length;
+        }
     }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
 
-        tv_word = (TextView) findViewById(R.id.txt_word);
-        tv_pronunciation = (TextView) findViewById(R.id.txt_pronunciation);
-        tv_paraphrase = (TextView) findViewById(R.id.txt_paraphrase);
-        tv_progress = (TextView) findViewById(R.id.txt_progress);
-        btn_lastno = (Button) findViewById(R.id.btn_lastno);
-        btn_curno = (Button) findViewById(R.id.btn_no);
-        btn_curyes = (Button) findViewById(R.id.btn_yes);
-
-        btn_lastno.setOnClickListener(MainActivity.this);
-        btn_lastno.setVisibility(View.INVISIBLE);
-        btn_curno.setOnClickListener(MainActivity.this);
-        btn_curyes.setOnClickListener(MainActivity.this);
-
-        wordProvider = new AwkwardProvider(getApplicationContext());
-        wordProvider.prepareWordList(7);
-
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-//        Timer timer = new Timer(false);
-//        timer.schedule(new TimerTask() {
-//            @Override
-//            public void run() {
-//                MainActivity.this.runOnUiThread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        MainActivity.this.nextWord();
-//                    }
-//                });
-//            }
-//        }, 0, 1000);
-
-
-
-        remeTimer = new CountDownTimer(3000, 1000) {
-
-            public void onTick(long millisUntilFinished) {
-
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
             }
+        });
 
-            public void onFinish() {
-                MainActivity.this.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        MainActivity.this.onRemeNotSuccess();
-                    }
+        WordDbAdapter wdbAdapter = WordDbAdapter.getInstance(this.getApplicationContext());
+        wdbAdapter.open();
+        int wordListIDs[] = wdbAdapter.getWordListIDs();
+        wdbAdapter.close();
 
-                });
-            }
-        };
-
-        showTimer = new CountDownTimer(1000, 1000) {
-
-            public void onTick(long millisUntilFinished) {
-
-            }
-
-            public void onFinish() {
-                MainActivity.this.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        MainActivity.this.nextWord();
-                    }
-
-                });
-
-            }
-        };
-
-        nextWord();
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view_wordlist);
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setAdapter(new MyAdapter(wordListIDs, this));
 
 
     }
 
-    public void showWordParaphrase() {
-        tv_paraphrase.setVisibility(View.VISIBLE);
-    }
-
-    public void nextWord()
-    {
-        WordDbAdapter.WordData word = wordProvider.getNextWord();
-        if(word != null) {
-            tv_word.setText(word.word);
-            tv_pronunciation.setText("[" + word.pronAndParaphrList.get(0).first + "]");
-            tv_paraphrase.setVisibility(View.INVISIBLE);
-            tv_paraphrase.setText(word.pronAndParaphrList.get(0).second);
-            btn_curno.setEnabled(true);
-            btn_curyes.setEnabled(true);
-            tv_progress.setText(String.format("%d/%d", wordProvider.getCurrentCompletedCount(), wordProvider.getTotalCount()));
-        }
-        remeTimer.start();
-    }
-
-    public void onRemeNotSuccess() {
-        remeTimer.cancel();
-        showTimer.cancel();
-        wordProvider.setCurrentResult(0);
-        showWordParaphrase();
-        showTimer.start();
-    }
-
-    public void onRemeSuccess() {
-        remeTimer.cancel();
-        showTimer.cancel();
-        wordProvider.setCurrentResult(1);
-        showWordParaphrase();
-        showTimer.start();
-    }
-
-    public void onLastRemeNotSuccess() {
-        remeTimer.cancel();
-        showTimer.cancel();
-        wordProvider.setLastResult(0);
-        remeTimer.start();
-    }
-
-    public void onClickLastNo()
-    {
-        onLastRemeNotSuccess();
-    }
-
-    public void onClickCurrentNo()
-    {
-        btn_curno.setEnabled(false);
-        onRemeNotSuccess();
-    }
-
-    public void onClickCurrentYes()
-    {
-        btn_curyes.setEnabled(false);
-        onRemeSuccess();
-    }
-
-
-    @Override
-    public void onClick(View view) {
-        if(view == btn_lastno)
-            onClickLastNo();
-        else if(view == btn_curno)
-            onClickCurrentNo();
-        else if(view == btn_curyes)
-            onClickCurrentYes();
-    }
 }
