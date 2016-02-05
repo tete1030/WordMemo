@@ -4,13 +4,13 @@ from wordparser import WordListParser
 from worddb import WordDB
 
 
-word_list_str = open('word/list7.txt', encoding='utf-8').read()
+word_list_str = open('word/list32.txt', encoding='utf-8').read()
 word_list = WordListParser.parse(word_list_str)
-db = WordDB("db/word.db")
+db = WordDB("../db/word.db")
 
 print(len(word_list))
 for word in word_list:
-    db.add_word(7, word['word'], word)
+    db.add_word(32, word['word'], word)
     print('%s' % word['word'], end='')
     for sub in word['subwords']:
         print('\t[%s]\t%s' % (sub['pronounce'],

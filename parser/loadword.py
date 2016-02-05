@@ -3,7 +3,7 @@ __author__ = 'texot'
 from worddb import WordDB
 
 
-db = WordDB("db/word.db")
+db = WordDB("../db/word.db")
 
 word_list = [item[1] for item in db.get_list(7, True)]
 

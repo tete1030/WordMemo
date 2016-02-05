@@ -22,7 +22,6 @@
       <column name="word" sqlType="TEXT" precision="0" scale="-1" nullable="true" jdbcType="12"/>
       <column name="content" sqlType="GWORD" precision="0" scale="-1" nullable="true" jdbcType="12"/>
       <primary-key columns="id"/>
-      <exported-key name="#FAKE_logs_1" table="logs" schema="" catalog="" columns="word_id"/>
       <index name="wordindex" unique="true" columns="word"/>
     </table>
   </data-source>
