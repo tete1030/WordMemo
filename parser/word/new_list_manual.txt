@@ -1,0 +1,14 @@
+check exception line:
+^(?![\w-]+$|\[|(?:v\.|adj\.|n\.|interj\.|adv\.)(?:/(?:v\.|adj\.|n\.|interj\.|adv\.))* |(搭|记|同|例|参)[ 　]).+$
+
+selection:
+(?#for multiline)(?s)^(?#word)(?<word>[\w-]+)\n(?#pron)(?<pron>\[.+?\])(?<sep>\n?)(?#paraphrase)(?<para>.*?)\n+(?#next)(?=^(?:\w+)\n(?:\[.+?\])|\z)
+
+check:
+$+{word}\n check with count of search at original text with ^(\w+)$
+$+{pron}\n
+$+{para}\n
+check count and text of all below
+
+replace with:
+$+{word}\n$+{pron}$+{sep}$+{para}\n\n

@@ -6,7 +6,7 @@ class WordListParser:
 
     @classmethod
     def parse(cls, words_text: str):
-        wordstr_list = words_text.split('\n\n')
+        wordstr_list = words_text.strip().split('\n\n')
         return [WordParser.parse(wordstr.strip()) for wordstr in wordstr_list]
 
 '''
