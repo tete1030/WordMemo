@@ -1,6 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ripple xmlns:android="http://schemas.android.com/apk/res/android"
-    android:color="?attr/colorControlHighlight" >
-    <item android:drawable="@drawable/bg_button" />
+    android:color="?attr/colorControlHighlight">
+    <item>
+        <inset android:inset="4dp">
+            <selector>
+                <item android:state_pressed="true" >
+                    <shape>
+                        <solid
+                            android:color="#aaaaaa" />
+                        <stroke
+                            android:width="0dp" />
+                        <corners
+                            android:radius="2dp" />
+                        <padding
+                            android:left="10dp"
+                            android:top="10dp"
+                            android:right="10dp"
+                            android:bottom="10dp" />
+                    </shape>
+                </item>
 
+                <item android:state_focused="true">
+                    <shape>
+                        <solid
+                            android:color="#bbbbbb" />
+                        <stroke
+                            android:width="0dp" />
+                        <corners
+                            android:radius="2dp" />
+                        <padding
+                            android:left="10dp"
+                            android:top="10dp"
+                            android:right="10dp"
+                            android:bottom="10dp" />
+                    </shape>
+                </item>
+
+                <item>
+                    <shape>
+                        <solid
+                            android:color="#dddddd" />
+                        <stroke
+                            android:width="0dp" />
+                        <corners
+                            android:radius="2dp" />
+                        <padding
+                            android:left="10dp"
+                            android:top="10dp"
+                            android:right="10dp"
+                            android:bottom="10dp" />
+                    </shape>
+                </item>
+            </selector>
+        </inset>
+    </item>
 </ripple>
