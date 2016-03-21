@@ -1,9 +1,9 @@
 package me.texot.rword;
 
 import android.os.CountDownTimer;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -13,7 +13,16 @@ import android.widget.TextView;
 import java.util.Timer;
 import java.util.TimerTask;
 
-// TODO: Multi-thread secure check
+// TODO List
+// * multi-thread safe check
+// * dynamic paraphrase present duration according to length of text
+// * pause (show the phrase when pause pressed)
+// * stop (enter the stop status, and stop after necessary words have been prompted)
+// * word succeed at first time do not appear again or decrease times
+// * failed word statistic
+// * half an hour one time is better
+// * tune durations between words (decrease times and/or reduce durations between latter trials)
+// * present other phrases
 
 public class RememberActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -27,17 +36,21 @@ public class RememberActivity extends AppCompatActivity implements View.OnClickL
 
     private IWordProvider m_wordProvider;
 
-    private CountDownTimer m_rememTimer, m_showTimer;
+    private CountDownTimer m_rememTimer, m_perceptionTimer;
 
-    private Timer m_preRememberTimer = new Timer(false);
+    private Timer m_preRememberTimer;
+
+    private Handler m_handler = new Handler();
 
     private int m_wordListID;
 
     private enum UIState {
-        NONE,
+        START,
         PREREMEMBER,
         REMEMBER,
-        SHOW
+        PERCEPTION,
+        PAUSE,
+        STOP
     }
 
     private UIState m_uiState;
@@ -51,6 +64,7 @@ public class RememberActivity extends AppCompatActivity implements View.OnClickL
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_remember);
 
+        // MainActivity notify listid
         int listid = getIntent().getIntExtra("listid", 0);
         if(listid == 0) {
             finish();
@@ -71,12 +85,10 @@ public class RememberActivity extends AppCompatActivity implements View.OnClickL
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 int action = event.getAction();
-                if(action == MotionEvent.ACTION_DOWN) {
-                    // TODO: Pause all timer and action
-                }
-                else if(action == MotionEvent.ACTION_UP) {
-                    // TODO: Restore all timer and action
-                }
+                if(action == MotionEvent.ACTION_DOWN)
+                    RememberActivity.this.onButtonPause(true);
+                else if(action == MotionEvent.ACTION_UP)
+                    RememberActivity.this.onButtonPause(false);
                 return false;
             }
         });
@@ -89,104 +101,140 @@ public class RememberActivity extends AppCompatActivity implements View.OnClickL
         m_rememTimer = new CountDownTimer(3000, 1000) {
 
             public void onTick(long millisUntilFinished) {
-
+                // do countdown
             }
 
             public void onFinish() {
-                RememberActivity.this.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        RememberActivity.this.onRememNotSuccess();
-                    }
-
-                });
+                m_handler.post(m_rememTimerRunnable);
             }
         };
 
-        m_showTimer = new CountDownTimer(1000, 1000) {
+        m_perceptionTimer = new CountDownTimer(1000, 1000) {
 
             public void onTick(long millisUntilFinished) {
 
             }
 
             public void onFinish() {
-                RememberActivity.this.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        RememberActivity.this.nextWord();
-                    }
-
-                });
-
+                m_handler.post(m_perceptionTimerRunnable);
             }
         };
 
-        m_uiState = UIState.NONE;
-
-        startRemember();
-
+        setUIState(UIState.START);
 
     }
 
-    public void showWordParaphrase() {
-        m_tvParaphrase.setVisibility(View.VISIBLE);
-    }
 
-    public void startRemember() {
-        m_btnCurNo.setEnabled(true);
-        m_btnCurYes.setEnabled(true);
-        nextWord();
-    }
-
-    public void nextWord()
-    {
-        WordData word = m_wordProvider.getNextWord();
-        if(word != null) {
-            m_uiState = UIState.PREREMEMBER;
-            // wait for 500ms to compensate user respond delay
-
-            m_preRememberTimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    RememberActivity.this.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            RememberActivity.this.onToRememberState();
-                        }
-                    });
-                }
-            }, 500);
-            m_tvWord.setText(word.word);
-            m_tvPronunciation.setText("[" + word.pronAndParaphrList.get(0).first + "]");
-            m_tvParaphrase.setVisibility(View.INVISIBLE);
-            m_tvParaphrase.setText(word.pronAndParaphrList.get(0).second);
-            m_tvProgress.setText(String.format("%d/%d", m_wordProvider.getCurrentCompletedCount() + 1, m_wordProvider.getTotalCount()));
+    public void onButtonPause(boolean isDown) {
+        if(isDown) {
+            setUIState(UIState.PAUSE);
+            onRememFailed();
+        } else {
+            setUIState(UIState.PREREMEMBER);
         }
-        m_rememTimer.start();
     }
 
-    public void onToRememberState() {
-        m_uiState = UIState.REMEMBER;
-        m_btnCurNo.setEnabled(true);
-        m_btnCurYes.setEnabled(true);
+    public void setUIState(UIState state) {
+        m_uiState = state;
+        switch(state) {
+            case START:
+                m_btnCurNo.setEnabled(true);
+                m_btnCurYes.setEnabled(true);
+                setUIState(UIState.PREREMEMBER);
+
+                break;
+
+            case PREREMEMBER:
+                WordData word = m_wordProvider.getNextWord();
+                if(word == null) {
+                    m_uiState = UIState.STOP;
+                    break;
+                }
+                // wait for 500ms to compensate user respond delay
+                m_preRememberTimer = new Timer(false);
+                m_preRememberTimer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        RememberActivity.this.m_handler.post(m_preRememTimerRunnable);
+                    }
+                }, 500);
+
+                m_tvWord.setText(word.word);
+                m_tvPronunciation.setText(String.format("[%s]", word.pronAndParaphrList.get(0).first));
+                m_tvParaphrase.setVisibility(View.INVISIBLE);
+                m_tvParaphrase.setText(word.pronAndParaphrList.get(0).second);
+                m_tvProgress.setText(String.format("%d/%d", m_wordProvider.getCurrentCompletedCount() + 1, m_wordProvider.getTotalCount()));
+                m_rememTimer.start();
+                break;
+            case REMEMBER:
+                m_btnCurNo.setEnabled(true);
+                m_btnCurYes.setEnabled(true);
+
+                break;
+            case PERCEPTION:
+                m_rememTimer.cancel();
+                m_tvParaphrase.setVisibility(View.VISIBLE);
+                m_perceptionTimer.start();
+                break;
+            case PAUSE:
+                m_rememTimer.cancel();
+                m_handler.removeCallbacks(m_rememTimerRunnable);
+                m_perceptionTimer.cancel();
+                m_handler.removeCallbacks(m_perceptionTimerRunnable);
+                m_preRememberTimer.cancel();
+                m_handler.removeCallbacks(m_preRememTimerRunnable);
+                m_btnCurNo.setEnabled(false);
+                m_btnCurYes.setEnabled(false);
+                m_tvParaphrase.setVisibility(View.VISIBLE);
+                break;
+            case STOP:
+                break;
+            default:
+                break;
+        }
     }
 
-    public void onToShowState() {
-        m_uiState = UIState.SHOW;
-        m_rememTimer.cancel();
-        showWordParaphrase();
-        m_showTimer.start();
+    private Runnable m_rememTimerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            RememberActivity.this.onRememTimer();
+        }
+    };
+
+    private Runnable m_perceptionTimerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            RememberActivity.this.onPerceptionTimer();
+        }
+    };
+
+    private Runnable m_preRememTimerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            RememberActivity.this.setUIState(UIState.REMEMBER);
+        }
+    };
+
+    public void onRememTimer() {
+        onRememFailed();
     }
 
-    public void onRememNotSuccess() {
+    public void onPerceptionTimer() {
+        setUIState(UIState.PREREMEMBER);
+    }
+
+    public void onRememFailed() {
         if(m_uiState == UIState.PREREMEMBER) {
             m_wordProvider.setLastResult(0);
         }
         else if(m_uiState == UIState.REMEMBER) {
             m_wordProvider.setCurrentResult(0);
-            onToShowState();
+            setUIState(UIState.PERCEPTION);
         }
-        else if(m_uiState == UIState.SHOW) {
+        else if(m_uiState == UIState.PERCEPTION) {
+            m_wordProvider.setCurrentResult(0);
+        }
+        else if(m_uiState == UIState.PAUSE) {
             m_wordProvider.setCurrentResult(0);
         }
 
@@ -198,22 +246,17 @@ public class RememberActivity extends AppCompatActivity implements View.OnClickL
         }
         else if(m_uiState == UIState.REMEMBER) {
             m_wordProvider.setCurrentResult(1);
-            onToShowState();
+            setUIState(UIState.PERCEPTION);
         }
-        else if(m_uiState == UIState.SHOW) {
+        else if(m_uiState == UIState.PERCEPTION) {
             m_wordProvider.setCurrentResult(1);
         }
-    }
-
-    public void onClickLastNo()
-    {
-
     }
 
     public void onClickCurrentNo()
     {
         m_btnCurNo.setEnabled(false);
-        onRememNotSuccess();
+        onRememFailed();
     }
 
     public void onClickCurrentYes()
