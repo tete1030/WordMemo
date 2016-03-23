@@ -36,6 +36,14 @@ public class NormalDistributionWordProvider implements IWordProvider {
     }
 
     @Override
+    public void close() {
+        if(m_dbAdapter != null) {
+            m_dbAdapter.close();
+            m_dbAdapter = null;
+        }
+    }
+
+    @Override
     public void prepareWordList(int listId) {
         WordData[] list = m_dbAdapter.getWordListWithContent(listId);
 

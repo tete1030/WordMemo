@@ -27,10 +27,30 @@ public class AwkwardProvider implements IWordProvider {
     private int m_taskIndex = -1;
     private int m_lastTaskIndex = -1;
     private LinkedList<RememberInfo> m_remeHistory = new LinkedList<>();
+    private boolean m_isPadding = true;
 
     public AwkwardProvider() {
         m_dbAdapter = WordDbAdapter.getInstance(null);
         m_dbAdapter.open();
+    }
+
+    @Override
+    public void close() {
+        if(m_dbAdapter != null) {
+            m_dbAdapter.close();
+            m_dbAdapter = null;
+        }
+    }
+
+    @Override
+    public void finalize() throws Throwable {
+        super.finalize();
+        this.close();
+    }
+
+
+    public void setPadding(boolean padding) {
+        m_isPadding = padding;
     }
 
     @Override
@@ -52,12 +72,12 @@ public class AwkwardProvider implements IWordProvider {
             while(true) {
                 tmp = new TaskList(m_taskList);
                 emptyPos = tmp.findNextEmpty(emptyPos);
-                new Task(word, rminfo, Integer.MAX_VALUE, emptyPos, 0).put(tmp, 0);
+                new Task(word, rminfo, 0, emptyPos, 0).put(tmp, 0);
                 int pos = emptyPos;
                 boolean allSuccess = true;
                 for (int intervalIndex = 0; intervalIndex < REME_INTERVAL_LIST.length; intervalIndex++) {
                     pos += 1 + REME_INTERVAL_LIST[intervalIndex];
-                    if(!new Task(word, rminfo, intervalIndex, pos, REME_INTERVAL_MAX_OFFSET_LIST[intervalIndex])
+                    if(!new Task(word, rminfo, intervalIndex + 1, pos, REME_INTERVAL_MAX_OFFSET_LIST[intervalIndex])
                             .put(tmp, 0)) {
                         allSuccess = false;
                         break;
@@ -71,7 +91,10 @@ public class AwkwardProvider implements IWordProvider {
 
         }
 
+
     }
+
+
 
     public String getStatistics() {
         StringBuilder sb = new StringBuilder();
@@ -98,52 +121,84 @@ public class AwkwardProvider implements IWordProvider {
     @Override
     public WordData getNextWord() {
         //int taskIndex = m_taskList.findNextAvail(m_taskIndex + 1);
-        int taskIndex = m_taskIndex + 1;
-        if(taskIndex >= 0 && taskIndex < m_taskList.countOfAll()) {
-            m_lastTaskIndex = m_taskIndex;
-            m_taskIndex = taskIndex;
-            Task curtask = m_taskList.get(m_taskIndex);
-            if(curtask != null) {
-                RememberInfo rminfo = curtask.getRememberInfo();
-                m_remeHistory.remove(rminfo);
-                m_remeHistory.add(curtask.getRememberInfo());
-                return curtask.getWord();
+        int taskIndex = m_taskIndex;
+        WordData ret = null;
+
+        while(true) {
+
+            if (taskIndex >= m_taskList.countOfAll()) {
+                Log.i("getNextWord", "index touch bound");
+                break;
             }
-            else {
-                RememberInfo rminfo = null;
-                for(RememberInfo ri : m_remeHistory) {
-                    if(m_taskIndex + 1 >= m_taskList.countOfAll()) {
+
+            taskIndex++;
+
+            Task curtask = m_taskList.get(taskIndex);
+            Log.i("getNextWord", String.format("word at index %d, word = %s", taskIndex, curtask));
+            RememberInfo rminfo = null;
+            if (curtask != null) {
+                rminfo = curtask.getRememberInfo();
+
+            } else if (m_isPadding) {
+                Log.i("getNextWord", "fill empty word");
+                for (RememberInfo ri : m_remeHistory) {
+                    // if it's the last word, current history word is ok to be presented
+                    if (taskIndex + 1 >= m_taskList.countOfAll()) {
                         rminfo = ri;
                         break;
                     }
-                    Task nextTask = m_taskList.get(m_taskIndex + 1);
-                    if(nextTask == null) {
+                    // if next word is null or next word is not equal to current history word,
+                    // current word is ok
+                    Task nextTask = m_taskList.get(taskIndex + 1);
+                    if (nextTask == null || nextTask.getRememberInfo() != ri) {
                         rminfo = ri;
                         break;
                     }
-                    if (ri != nextTask.getRememberInfo()) {
-                        rminfo = ri;
-                        break;
-                    }
+
                 }
-                if(rminfo == null)
+                // if history word failed to get, return first word in history
+                if (rminfo == null && m_remeHistory.size() > 0)
                     rminfo = m_remeHistory.get(0);
-                if(rminfo != null) {
+
+                if (rminfo != null) {
                     curtask = new Task(rminfo.getWord(), rminfo, Integer.MAX_VALUE, taskIndex, Integer.MAX_VALUE);
                     curtask.put(m_taskList, 0);
-                    m_remeHistory.remove(rminfo);
-                    m_remeHistory.add(rminfo);
-                    return curtask.getWord();
                 }
             }
+
+            if(rminfo != null) {
+                m_remeHistory.remove(rminfo); // if exists
+                m_remeHistory.add(rminfo);
+                ret = curtask.getWord();
+                break;
+            }
+
         }
-        return null;
+
+        if(m_taskIndex != taskIndex) {
+            m_lastTaskIndex = m_taskIndex;
+            m_taskIndex = taskIndex;
+        }
+        return ret;
     }
 
     private void setResult(int index, int result) {
         Task task = m_taskList.get(index);
-        task.getRememberInfo().setRemResult(index + 1, result);
-        task.getRememberInfo().setLevel(task.getPriority() + 1);
+        RememberInfo rminfo = task.getRememberInfo();
+        rminfo.setRemResult(index + 1, result);
+        rminfo.setLevel(task.getPriority() + 1);
+
+        // if the first time remembering of a word is success, ignore future tasks of this word
+        Log.i("setResult", String.format("index %d priority %d log result %d", index, task.getPriority(), result));
+        if(task.getPriority() == 0 && result == 1) {
+            for (int i = m_taskIndex + 1; i < m_taskList.countOfAll(); i++) {
+                Task tmp = m_taskList.get(i);
+                if (tmp != null && tmp.getRememberInfo() == rminfo) {
+                    Log.i("setResult", String.format("delete index %d", i));
+                    m_taskList.set(i, null);
+                }
+            }
+        }
     }
 
     @Override

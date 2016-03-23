@@ -190,7 +190,11 @@ public class WordDbAdapter {
         cv.put(TABLE_LOG_KEY_TIME, time);
         cv.put(TABLE_LOG_KEY_RESULT, result);
         mDb.insert(DATABASE_TABLE_LOG, null, cv);
+
+
     }
+
+
 
 
 }

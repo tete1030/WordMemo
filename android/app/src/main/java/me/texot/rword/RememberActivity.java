@@ -4,6 +4,7 @@ import android.os.CountDownTimer;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -16,13 +17,18 @@ import java.util.TimerTask;
 // TODO List
 // * multi-thread safe check
 // * dynamic paraphrase present duration according to length of text
-// * pause (show the phrase when pause pressed)
+// pause (show the phrase when pause pressed)
 // * stop (enter the stop status, and stop after necessary words have been prompted)
-// * word succeed at first time do not appear again or decrease times
+// word succeed at first time do not appear again or decrease times
 // * failed word statistic
 // * half an hour one time is better
 // * tune durations between words (decrease times and/or reduce durations between latter trials)
 // * present other phrases
+
+/*
+FIXME same word appeared consistently when padding disabled (need re-constructing?), especially
+FIXME when word between them is deleted as that word is known
+*/
 
 public class RememberActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -85,16 +91,21 @@ public class RememberActivity extends AppCompatActivity implements View.OnClickL
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 int action = event.getAction();
-                if(action == MotionEvent.ACTION_DOWN)
+                if(action == MotionEvent.ACTION_DOWN) {
                     RememberActivity.this.onButtonPause(true);
-                else if(action == MotionEvent.ACTION_UP)
+                } else if(action == MotionEvent.ACTION_UP) {
                     RememberActivity.this.onButtonPause(false);
+                }
                 return false;
             }
         });
 
-        m_wordProvider = new AwkwardProvider();
+        AwkwardProvider awkProv = new AwkwardProvider();
+        awkProv.setPadding(false);
+
+        m_wordProvider = awkProv;
         m_wordProvider.prepareWordList(listid);
+
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
@@ -124,20 +135,62 @@ public class RememberActivity extends AppCompatActivity implements View.OnClickL
 
     }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        setUIState(UIState.PAUSE);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        setUIState(UIState.PERCEPTION);
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        finish();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        setUIState(UIState.STOP);
+        m_wordProvider.close();
+    }
+
 
     public void onButtonPause(boolean isDown) {
         if(isDown) {
+            Log.i("onButtonPause", "pause down");
             setUIState(UIState.PAUSE);
             onRememFailed();
         } else {
-            setUIState(UIState.PREREMEMBER);
+            Log.i("onButtonPause", "pause up");
+            setUIState(UIState.PERCEPTION);
+        }
+    }
+
+    private void stopAllTimer() {
+        m_rememTimer.cancel();
+        m_handler.removeCallbacks(m_rememTimerRunnable);
+        m_perceptionTimer.cancel();
+        m_handler.removeCallbacks(m_perceptionTimerRunnable);
+        if(m_preRememberTimer != null) {
+            m_preRememberTimer.cancel();
+            m_preRememberTimer = null;
+            m_handler.removeCallbacks(m_preRememTimerRunnable);
         }
     }
 
     public void setUIState(UIState state) {
+        Log.i("setUIState", state.toString());
         m_uiState = state;
+
         switch(state) {
             case START:
+                stopAllTimer();
                 m_btnCurNo.setEnabled(true);
                 m_btnCurYes.setEnabled(true);
                 setUIState(UIState.PREREMEMBER);
@@ -145,9 +198,10 @@ public class RememberActivity extends AppCompatActivity implements View.OnClickL
                 break;
 
             case PREREMEMBER:
+                stopAllTimer();
                 WordData word = m_wordProvider.getNextWord();
                 if(word == null) {
-                    m_uiState = UIState.STOP;
+                    setUIState(UIState.STOP);
                     break;
                 }
                 // wait for 500ms to compensate user respond delay
@@ -172,22 +226,21 @@ public class RememberActivity extends AppCompatActivity implements View.OnClickL
 
                 break;
             case PERCEPTION:
-                m_rememTimer.cancel();
+                stopAllTimer();
                 m_tvParaphrase.setVisibility(View.VISIBLE);
                 m_perceptionTimer.start();
                 break;
             case PAUSE:
-                m_rememTimer.cancel();
-                m_handler.removeCallbacks(m_rememTimerRunnable);
-                m_perceptionTimer.cancel();
-                m_handler.removeCallbacks(m_perceptionTimerRunnable);
-                m_preRememberTimer.cancel();
-                m_handler.removeCallbacks(m_preRememTimerRunnable);
+                stopAllTimer();
                 m_btnCurNo.setEnabled(false);
                 m_btnCurYes.setEnabled(false);
                 m_tvParaphrase.setVisibility(View.VISIBLE);
                 break;
             case STOP:
+                stopAllTimer();
+                m_btnCurNo.setEnabled(false);
+                m_btnCurYes.setEnabled(false);
+                m_tvParaphrase.setVisibility(View.VISIBLE);
                 break;
             default:
                 break;
@@ -216,14 +269,17 @@ public class RememberActivity extends AppCompatActivity implements View.OnClickL
     };
 
     public void onRememTimer() {
+        Log.i("onRememTimer", "");
         onRememFailed();
     }
 
     public void onPerceptionTimer() {
+        Log.i("onPerceptionTimer", "");
         setUIState(UIState.PREREMEMBER);
     }
 
     public void onRememFailed() {
+        Log.i("onRememFailed", "remember failed");
         if(m_uiState == UIState.PREREMEMBER) {
             m_wordProvider.setLastResult(0);
         }
@@ -241,6 +297,7 @@ public class RememberActivity extends AppCompatActivity implements View.OnClickL
     }
 
     public void onRememSuccess() {
+        Log.i("onRememSuccess", "remember success");
         if(m_uiState == UIState.PREREMEMBER) {
             m_wordProvider.setLastResult(1);
         }
@@ -255,12 +312,14 @@ public class RememberActivity extends AppCompatActivity implements View.OnClickL
 
     public void onClickCurrentNo()
     {
+        Log.i("onClickCurrentNo", "no");
         m_btnCurNo.setEnabled(false);
         onRememFailed();
     }
 
     public void onClickCurrentYes()
     {
+        Log.i("onClickCurrentYes", "yes");
         m_btnCurYes.setEnabled(false);
         onRememSuccess();
     }

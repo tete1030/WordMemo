@@ -13,7 +13,7 @@ public class TaskList implements Iterable<Task> {
 
     public TaskList(TaskList orig) {
         m_tasks = new ArrayList<>(orig.m_tasks);
-        strimToMinimum();
+        trimEndEmpty();
     }
 
     public TaskList() {
@@ -31,9 +31,19 @@ public class TaskList implements Iterable<Task> {
         return m_tasks.set(location, object);
     }
 
-    private void strimToMinimum() {
-        while(m_tasks.size() > 0 && m_tasks.get(m_tasks.size() - 1) == null)
-            m_tasks.remove(m_tasks.size()-1);
+    private void trimEndEmpty() {
+        for(int i = m_tasks.size() - 1; i>=0 && m_tasks.get(i)==null; i--) {
+            m_tasks.remove(i);
+        }
+    }
+
+    public void trimEmpty() {
+        for(int i = 0; i < m_tasks.size(); ) {
+            if(m_tasks.get(i) == null)
+                m_tasks.remove(i);
+            else
+                i++;
+        }
     }
 
     public Task get(int location) {
@@ -72,12 +82,12 @@ public class TaskList implements Iterable<Task> {
     }
 
 
-    public Integer[] getEmptyArray() {
+    public Integer[] getEmptyIndexArray() {
         ArrayList<Integer> list = new ArrayList<>();
         for(int i = 0; i < m_tasks.size(); i++)
             if(m_tasks.get(i) == null)
                 list.add(i);
-        return list.toArray(new Integer[0]);
+        return list.toArray(new Integer[list.size()]);
     }
 
     @Override
@@ -104,7 +114,7 @@ public class TaskList implements Iterable<Task> {
     }
 
     public Task[] toArrayOfAll() {
-        return m_tasks.toArray(new Task[0]);
+        return m_tasks.toArray(new Task[m_tasks.size()]);
     }
 
     public Task[] toArrayOfAvail() {
@@ -112,7 +122,7 @@ public class TaskList implements Iterable<Task> {
         for(Task t : m_tasks)
             if(t != null)
                 retTaskList.add(t);
-        return retTaskList.toArray(new Task[0]);
+        return retTaskList.toArray(new Task[retTaskList.size()]);
     }
 
     @Override
